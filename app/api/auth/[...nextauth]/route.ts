@@ -34,7 +34,7 @@ export const authOptions: NextAuthOptions = {
 
           const result = await pool.query(
             `
-            SELECT id, display_name, email, hashed_password, active, role
+            SELECT id, employee_id, display_name, email, hashed_password, active, role
             FROM public.employees
             WHERE email = $1
             LIMIT 1
@@ -60,7 +60,7 @@ export const authOptions: NextAuthOptions = {
             id: String(user.id),
             email: user.email,
             name: user.display_name,      // NextAuth standard
-            employeeId: Number(user.id),  // ce que tu utilises partout
+            employeeId: Number(user.employee_id),
             displayName: user.display_name,
             role: user.role ?? null,
           };
