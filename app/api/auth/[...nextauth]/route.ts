@@ -91,9 +91,9 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      session.user.employeeId = token.employeeId;
-      session.user.displayName = token.displayName;
-      session.user.role = token.role;
+      (session.user as any).employeeId = token.employeeId;
+      (session.user as any).displayName = token.displayName;
+      (session.user as any).role = token.role;
       return session;
     },
   },
