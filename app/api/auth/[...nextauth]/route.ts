@@ -1,4 +1,4 @@
-import NextAuth, { type NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { Pool } from "pg";
@@ -81,18 +81,11 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async session({ session, token }) {
-      const u = session.user as any;
-      u.employeeId = token.employeeId;
-      u.displayName = token.displayName;
-      u.role = token.role;
-      return session;
-    },
-
-    async session({ session, token }) {
-      (session.user as any).employeeId = token.employeeId;
-      (session.user as any).displayName = token.displayName;
-      (session.user as any).role = token.role;
-      return session;
+      const u = session.user as any
+      u.employeeId = token.employeeId
+      u.displayName = token.displayName
+      u.role = token.role
+      return session
     },
   },
 
