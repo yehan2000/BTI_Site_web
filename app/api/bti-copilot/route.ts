@@ -1,33 +1,28 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 import { BTI_COPILOT_SYSTEM_PROMPT } from "@/lib/btiCopilotPrompt";
 import { chercherArticles } from "@/lib/reglements/search";
 
 // Forcer le runtime Node.js (sinon OpenAI peut planter en edge)
 export const runtime = "nodejs";
 
-function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  // ✅ IMPORTANT : ne jamais instancier OpenAI sans clé
-  if (!apiKey) return null;
-
-  return new OpenAI({ apiKey });
-}
-
 export async function POST(req: Request) {
   try {
-    // 1) Vérifier la clé API (au runtime, pas au build)
-    const client = getOpenAIClient();
-    if (!client) {
+    // 1) Vérifier la clé API
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         {
           reply:
-            "Erreur de configuration : la variable OPENAI_API_KEY n'est pas définie sur le serveur. (Infomaniak ne l'a pas fournie).",
+            "Erreur de configuration : la variable OPENAI_API_KEY n'est pas définie sur le serveur (.env.local).",
         },
         { status: 200 }
       );
     }
+
+    // ✅ IMPORTANT : import dynamique + instanciation DANS le handler
+    const { default: OpenAI } = await import("openai");
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
     // 2) Lire le message utilisateur
     const body = await req.json().catch(() => null);
@@ -54,7 +49,7 @@ export async function POST(req: Request) {
         .join("\n\n");
 
       systemPrompt += `
-
+      
 Tu disposes des extraits de règlements communaux suivants. Tu dois t'appuyer *prioritairement* dessus pour répondre :
 
 ${contexteReglementaire}
@@ -103,9 +98,8 @@ Tu dois répondre de manière très prudente et indiquer clairement que tu ne pe
 }
 
 export async function GET() {
-  // ⚠️ On ne touche PAS OpenAI ici, comme ça le build ne plante jamais
   return NextResponse.json(
-    { reply: "✅ API BTI Copilot – endpoint opérationnel." },
+    { reply: "✅ API BTI Copilot – endpoint opérationnel avec IA." },
     { status: 200 }
   );
 }
