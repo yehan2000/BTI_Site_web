@@ -28,16 +28,14 @@
         "./*"
       ]
     },
-    "ignoreDeprecations": "6.0"
   },
   "include": [
     "next-env.d.ts",
-    "next-auth.d.ts",
+    "types/**/*.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "types/**/*.d.ts"
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

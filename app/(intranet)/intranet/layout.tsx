@@ -1,16 +1,18 @@
-import type { ReactNode } from "react";
-import { redirect } from "next/navigation";
-import { getAuthSession } from "@/lib/auth";
+import type { Session } from "next-auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import IntranetLayoutClient from "./layout-client";
 
 export default async function IntranetLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  const session = await getAuthSession();
-  if (!session) redirect("/login");
+  const session: Session | null = await getServerSession(authOptions as any);
 
-  // on passe la session au client pour afficher nom/photo etc.
-  return <IntranetLayoutClient session={session}>{children}</IntranetLayoutClient>;
+  return (
+    <IntranetLayoutClient session={session}>
+      {children}
+    </IntranetLayoutClient>
+  );
 }
