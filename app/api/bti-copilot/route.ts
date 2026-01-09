@@ -2,29 +2,29 @@ import { NextResponse } from "next/server";
 import { BTI_COPILOT_SYSTEM_PROMPT } from "@/lib/btiCopilotPrompt";
 import { chercherArticles } from "@/lib/reglements/search";
 
-// Forcer le runtime Node.js (sinon OpenAI peut planter en edge)
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    // 1) Vérifier la clé API
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    // ✅ aucune import / instanciation OpenAI si pas de clé
+    if (typeof apiKey !== "string" || apiKey.trim().length === 0) {
       return NextResponse.json(
         {
           reply:
-            "Erreur de configuration : la variable OPENAI_API_KEY n'est pas définie sur le serveur (.env.local).",
+            "BTI Copilot n’est pas configuré côté serveur (OPENAI_API_KEY manquante).",
         },
         { status: 200 }
       );
     }
 
-    // ✅ IMPORTANT : import dynamique + instanciation DANS le handler
+    // ✅ import dynamique uniquement quand la clé existe
     const { default: OpenAI } = await import("openai");
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
 
-    // 2) Lire le message utilisateur
+    // ✅ instancier après validation clé
+    const client = new OpenAI({ apiKey });
+
     const body = await req.json().catch(() => null);
     const userMessage: string = body?.message || "";
 
@@ -35,7 +35,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3) Chercher les articles de règlement pertinents
     const articlesPertinents = chercherArticles(userMessage);
 
     let systemPrompt = BTI_COPILOT_SYSTEM_PROMPT;
@@ -49,7 +48,7 @@ export async function POST(req: Request) {
         .join("\n\n");
 
       systemPrompt += `
-      
+
 Tu disposes des extraits de règlements communaux suivants. Tu dois t'appuyer *prioritairement* dessus pour répondre :
 
 ${contexteReglementaire}
@@ -65,7 +64,6 @@ Aucun extrait de règlement pertinent n'a été trouvé pour cette question.
 Tu dois répondre de manière très prudente et indiquer clairement que tu ne peux pas donner de réponse officielle sans consulter les règlements communaux.`;
     }
 
-    // 4) Appel à l'IA OpenAI
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -83,15 +81,10 @@ Tu dois répondre de manière très prudente et indiquer clairement que tu ne pe
     return NextResponse.json({ reply: aiReply }, { status: 200 });
   } catch (error: unknown) {
     console.error("BTI Copilot API error:", error);
+    const msg = error instanceof Error ? error.message : JSON.stringify(error);
 
-    const msg =
-      error instanceof Error ? error.message : JSON.stringify(error);
-
-    // On renvoie 200 pour que le front affiche quand même quelque chose
     return NextResponse.json(
-      {
-        reply: `Erreur interne dans BTI Copilot : ${msg}`,
-      },
+      { reply: `Erreur interne dans BTI Copilot : ${msg}` },
       { status: 200 }
     );
   }
@@ -99,7 +92,7 @@ Tu dois répondre de manière très prudente et indiquer clairement que tu ne pe
 
 export async function GET() {
   return NextResponse.json(
-    { reply: "✅ API BTI Copilot – endpoint opérationnel avec IA." },
+    { reply: "✅ API BTI Copilot – endpoint opérationnel." },
     { status: 200 }
   );
 }
