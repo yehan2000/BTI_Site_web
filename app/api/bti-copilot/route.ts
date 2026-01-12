@@ -3,12 +3,13 @@ import { BTI_COPILOT_SYSTEM_PROMPT } from "@/lib/btiCopilotPrompt";
 import { chercherArticles } from "@/lib/reglements/search";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function POST(req: Request) {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
 
-    // ✅ aucune import / instanciation OpenAI si pas de clé
     if (typeof apiKey !== "string" || apiKey.trim().length === 0) {
       return NextResponse.json(
         {
@@ -19,10 +20,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ import dynamique uniquement quand la clé existe
     const { default: OpenAI } = await import("openai");
-
-    // ✅ instancier après validation clé
     const client = new OpenAI({ apiKey });
 
     const body = await req.json().catch(() => null);
